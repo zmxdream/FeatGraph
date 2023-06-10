@@ -8,7 +8,9 @@ if not os.path.isdir('data'):
 
 data = RedditDataset()
 
-adj_scipy_csr = data.graph.adjacency_matrix_scipy(fmt='csr')
+#adj_scipy_csr = data.graph.adjacency_matrix_scipy(fmt='csr')
+#adj_scipy_csr = data[0].adjacency_matrix_scipy(fmt='csr')
+adj_scipy_csr = data[0].adj(scipy_fmt='csr')
 adj_scipy_csr.sort_indices()
 adj_scipy_csr.sum_duplicates()
 assert adj_scipy_csr.has_canonical_format  # the matrix has sorted indices and no duplicates

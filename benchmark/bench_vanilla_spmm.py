@@ -4,7 +4,8 @@ import numpy as np
 import argparse
 import tvm
 from tvm import te
-from tvm.topi.util import get_const_tuple
+#from tvm.topi.util import get_const_tuple
+from tvm.topi import get_const_tuple
 
 from featgraph.module import VanillaSpMMx86, VanillaSpMMcuda
 

@@ -1,7 +1,8 @@
 import numpy as np
 import tvm
 from tvm import te
-from tvm.topi.util import get_const_tuple
+#from tvm.topi.util import get_const_tuple
+from tvm.topi import get_const_tuple
 
 from ..util import util_convert_csr_to_dds
 from ..op import vanilla_spmm_csr_x86, schedule_vanilla_spmm_csr_x86, \
@@ -49,9 +50,12 @@ class SpMMbase():
                 dtype=str(self._adj_s1_idx.dtype), name='adj_s1_idx_placeholder')
             self._adj_vals_placeholder = te.placeholder(shape=self._adj_vals.shape, \
                 dtype=str(self._adj_vals.dtype), name='adj_vals_placeholder')
-            self._adj_s1_pos_tvm = tvm.nd.array(self._adj_s1_pos, ctx=self._ctx)
-            self._adj_s1_idx_tvm = tvm.nd.array(self._adj_s1_idx, ctx=self._ctx)
-            self._adj_vals_tvm = tvm.nd.array(self._adj_vals, ctx=self._ctx)
+            #self._adj_s1_pos_tvm = tvm.nd.array(self._adj_s1_pos, ctx=self._ctx)
+            #self._adj_s1_idx_tvm = tvm.nd.array(self._adj_s1_idx, ctx=self._ctx)
+            #self._adj_vals_tvm = tvm.nd.array(self._adj_vals, ctx=self._ctx)
+            self._adj_s1_pos_tvm = tvm.nd.array(self._adj_s1_pos, device=self._ctx)
+            self._adj_s1_idx_tvm = tvm.nd.array(self._adj_s1_idx, device=self._ctx)
+            self._adj_vals_tvm = tvm.nd.array(self._adj_vals, device=self._ctx)
             self._adj_d1_size = self._num_col_partitions
             self._adj_d2_size = self._num_rows + 1
         else:
@@ -64,9 +68,12 @@ class SpMMbase():
                 dtype=str(self._adj_indices.dtype), name='adj_indices_placeholder')
             self._adj_vals_placeholder = te.placeholder(shape=self._adj_vals.shape, \
                 dtype=str(self._adj_vals.dtype), name='adj_vals_placeholder')
-            self._adj_indptr_tvm = tvm.nd.array(self._adj_indptr, ctx=self._ctx)
-            self._adj_indices_tvm = tvm.nd.array(self._adj_indices, ctx=self._ctx)
-            self._adj_vals_tvm = tvm.nd.array(self._adj_vals, ctx=self._ctx)
+            #self._adj_indptr_tvm = tvm.nd.array(self._adj_indptr, ctx=self._ctx)
+            #self._adj_indices_tvm = tvm.nd.array(self._adj_indices, ctx=self._ctx)
+            #self._adj_vals_tvm = tvm.nd.array(self._adj_vals, ctx=self._ctx)
+            self._adj_indptr_tvm = tvm.nd.array(self._adj_indptr, device=self._ctx)
+            self._adj_indices_tvm = tvm.nd.array(self._adj_indices, device=self._ctx)
+            self._adj_vals_tvm = tvm.nd.array(self._adj_vals, device=self._ctx)
         # To be updated in self.build
         self._func = None
         # To be updated in self.run
@@ -108,7 +115,7 @@ class SpMMbase():
             self._func = tvm.build(s, [*input_placeholders, self._adj_indptr_placeholder, \
                 self._adj_indices_placeholder, self._adj_vals_placeholder, out_placeholder], target=self._target)
             self.out_tvm = tvm.nd.array(np.zeros(shape=get_const_tuple(out_placeholder.shape), \
-                dtype=str(out_placeholder.dtype)), ctx=self._ctx)
+                dtype=str(out_placeholder.dtype)), device=self._ctx)
 
     def lower_to_ir(self, input_placeholders, compute_args, schedule_args):
         """Return the IR. This can be useful for debug.
@@ -176,7 +183,7 @@ class SpMMbase():
         tcost: float32
             The average run time measured in seconds
         """
-        timer = self._func.time_evaluator(self._func.entry_name, ctx=self._ctx, number=num_runs)
+        timer = self._func.time_evaluator(self._func.entry_name, dev=self._ctx, number=num_runs)
         if self._num_col_partitions > 1:
             tcost = timer(*input_tvm_ndarrays, self._adj_s1_pos_tvm, \
                 self._adj_s1_idx_tvm, self._adj_vals_tvm, self.out_tvm).mean
